@@ -16,12 +16,12 @@ class Sarsa(object):
 
     def check_if_state_exist(self, state):
         if state not in self.q_table.index:
-            self.q_table = self.q_table.append(
-                pd.Series(
+            self.q_table = pd.concat(
+                [self.q_table, pd.Series(
                     [0] * len(self.actions),
                     index=self.q_table.columns,
                     name=state
-                )
+                ).to_frame().T]
             )
 
     def get_next_action(self, state):
