@@ -169,10 +169,15 @@ class Sarsa(object):
         self.q_table.loc[state, action] += self.alpha * (q_value_real - q_value_predict)
 
     def train(self):
+        success_count = 0
+        previous_q_table = self.q_table.copy()
+        q_table_changes = []
         for episode in range(100):
 
             # Init state.
             state = self.env.reset()
+            total_reward = 0  # Track total reward for the episode
+            success = False  # Flag for reaching the goal
 
             # Get first action.
             action = self.get_next_action(str(state))
@@ -183,6 +188,9 @@ class Sarsa(object):
                 # Get next state.
                 state_next, reward, terminal = self.env.step(action)
 
+                # Accumulate total reward
+                total_reward += reward  # Add the reward for the step to total reward
+
                 # Get next action.
                 action_next = self.get_next_action(str(state_next))
 
@@ -192,9 +200,21 @@ class Sarsa(object):
                 state, action = state_next, action_next
 
                 if terminal:
+                    if reward == 1:  # Check if reached the goal
+                        success = True
                     break
+            if success:
+                success_count += 1
+                # Run the episode and update the Q-table as usual
+                # After the episode, calculate the difference in Q-values
+                q_difference = (self.q_table - previous_q_table).abs().sum().sum()
+                q_table_changes.append(q_difference)
 
+                # Update the previous Q-table to the current one for the next comparison
+                previous_q_table = self.q_table.copy()            
             print('For episode: {}, the Q table is:\n {}'.format(episode, self.q_table))
+            print(f"Episode {episode}: Total Reward = {total_reward}, Success Rate = {success_count / (episode + 1)}")
+            print(f"Episode {episode}: Q-Table Change = {q_difference}")
 
         print('Game Over')
         self.env.destroy()
